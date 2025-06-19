@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:ai_home/core/theme/app_theme.dart';
+import 'package:ai_home/features/dishes/presentation/bloc/dishes_bloc.dart';
 import 'package:ai_home/injection/injection.dart';
 import 'package:ai_home/routes/app_router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 Future<void> main() async {
@@ -25,11 +27,18 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (BuildContext context, Widget? child) {
-        return MaterialApp.router(
-          title: 'Food App',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          routerConfig: appRouter.router,
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<DishesBloc>(
+              create: (context) => getIt<DishesBloc>(),
+            ),
+          ],
+          child: MaterialApp.router(
+            title: 'Food App',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            routerConfig: appRouter.router,
+          ),
         );
       },
     );

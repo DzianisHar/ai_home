@@ -1,113 +1,120 @@
-import 'package:ai_home/features/dishes/domain/entities/dish.dart';
-import 'package:ai_home/features/dishes/presentation/bloc/dishes_bloc.dart';
-import 'package:ai_home/features/dishes/presentation/bloc/dishes_event.dart';
+import 'package:ai_home/features/dishes/data/models/meal_response_model.dart';
 import 'package:ai_home/features/dishes/presentation/bloc/dishes_state.dart';
-import 'package:ai_home/injection/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
-class DishesPage extends StatelessWidget {
-  const DishesPage({super.key});
+import 'package:ai_home/features/dishes/presentation/bloc/dishes_bloc.dart';
+import 'package:ai_home/features/dishes/presentation/bloc/dishes_event.dart';
+import 'package:ai_home/features/dishes/presentation/widgets/meals_list.dart';
+
+class DishesPage extends StatefulWidget {
+  final String? category;
+
+  const DishesPage({
+    super.key,
+    this.category,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<DishesBloc>(
-      // Get the pre-initialized DishesBloc from GetIt
-      create: (BuildContext context) =>
-          getIt<DishesBloc>()..add(const LoadDishes()),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Dishes'),
-          centerTitle: true,
-        ),
-        body: BlocBuilder<DishesBloc, DishesState>(
-          builder: (BuildContext context, DishesState state) {
-            if (state is DishesLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is DishesError) {
-              return Center(child: Text('Error: ${state.message}'));
-            } else if (state is DishesLoaded) {
-              return _DishesList(dishes: state.dishes);
-            }
-            return const Center(child: Text('No dishes available'));
-          },
-        ),
-      ),
-    );
-  }
+  State<DishesPage> createState() => _DishesPageState();
 }
 
-class _DishesList extends StatelessWidget {
-  final List<Dish> dishes;
+class _DishesPageState extends State<DishesPage> {
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
 
-  const _DishesList({required this.dishes});
+  @override
+  void initState() {
+    super.initState();
+    // Load initial data when the page is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = context.read<DishesBloc>().state;
+      if (state is! RandomMealsLoaded) {
+        context.read<DishesBloc>().add(const LoadRandomMeals(count: 10));
+      }
+    });
+  }
+
+  void _loadInitialMeals() {
+    final state = context.read<DishesBloc>().state;
+    
+    // Only load if we don't already have data
+    if (!(state is RandomMealsLoaded || 
+          state is MealsSearched || 
+          state is MealsByCategoryLoaded)) {
+      if (widget.category != null) {
+        context.read<DishesBloc>().add(LoadMealsByCategory(widget.category!));
+      } else {
+        context.read<DishesBloc>().add(const LoadRandomMeals(count: 10));
+      }
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    if (query.isEmpty) {
+      context.read<DishesBloc>().add(const LoadRandomMeals(count: 10));
+    } else {
+      context.read<DishesBloc>().add(SearchMeals(query));
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: EdgeInsets.all(16.r),
-      itemCount: dishes.length,
-      itemBuilder: (BuildContext context, int index) {
-        final Dish dish = dishes[index];
-        return Card(
-          margin: EdgeInsets.only(bottom: 16.r),
-          child: ListTile(
-            contentPadding: EdgeInsets.all(16.r),
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(8.r),
-              child: Image.network(
-                dish.imageUrl,
-                width: 80.w,
-                height: 80.h,
-                fit: BoxFit.cover,
-                loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: 80.w,
-                    height: 80.h,
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
-                  width: 80.w,
-                  height: 80.h,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.fastfood, color: Colors.grey),
-                ),
-              ),
-            ),
-            title: Text(dish.name),
-            subtitle: Text(
-              dish.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Text(
-              '\$${dish.price.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            onTap: () {
-              context.push(
-                '/dish/${dish.id}',
-                extra: dish,
-              );
-            },
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: MealsList(category: widget.category),
     );
   }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      // backgroundColor: _isSearching ? Colors.white : Theme.of(context).primaryColor,
+      title: _isSearching
+          ? Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search meals...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.black54),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                style: const TextStyle(color: Colors.black),
+                onChanged: _onSearchChanged,
+              ),
+            )
+          : Text(widget.category ?? 'Meals'),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          icon: Icon(
+            _isSearching ? Icons.close : Icons.search,
+            color: _isSearching ? Colors.black : Colors.black,
+          ),
+          onPressed: () {
+            setState(() {
+              if (_isSearching) {
+                _searchController.clear();
+                _onSearchChanged('');
+              }
+              _isSearching = !_isSearching;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+
 }

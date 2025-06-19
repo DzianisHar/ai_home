@@ -1,21 +1,26 @@
-import 'package:ai_home/features/dishes/domain/entities/dish.dart';
 import 'package:ai_home/features/dishes/presentation/pages/dish_detail_page.dart';
 import 'package:ai_home/features/dishes/presentation/pages/dishes_page.dart';
-import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
+  static const String homePath = '/';
+  static const String dishPath = '/dish/:id';
+
+  static String getDishPath(String id) => '/dish/$id';
+
   final GoRouter router = GoRouter(
+    initialLocation: homePath,
     routes: <RouteBase>[
       GoRoute(
-        path: '/',
+        path: homePath,
         builder: (BuildContext context, GoRouterState state) => const DishesPage(),
       ),
       GoRoute(
-        path: '/dish/:id',
+        path: dishPath,
         builder: (BuildContext context, GoRouterState state) {
-          final Dish dish = state.extra! as Dish;
-          return DishDetailPage(dish: dish);
+          final mealId = state.pathParameters['id'] ?? '';
+          return DishDetailPage(mealId: mealId);
         },
       ),
     ],

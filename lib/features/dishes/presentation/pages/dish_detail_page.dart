@@ -1,131 +1,202 @@
-import 'package:ai_home/features/dishes/domain/entities/dish.dart';
+import 'package:ai_home/core/widgets/error_widget.dart' as error_widget;
+import 'package:ai_home/core/widgets/loading_widget.dart';
+import 'package:ai_home/features/dishes/data/models/meal_model.dart';
+import 'package:ai_home/features/dishes/presentation/bloc/dishes_bloc.dart';
+import 'package:ai_home/features/dishes/presentation/bloc/dishes_event.dart';
+import 'package:ai_home/features/dishes/presentation/bloc/dishes_state.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-class DishDetailPage extends StatelessWidget {
-  final Dish dish;
+class DishDetailPage extends StatefulWidget {
+  final String mealId;
 
   const DishDetailPage({
     super.key,
-    required this.dish,
+    required this.mealId,
   });
 
   @override
+  State<DishDetailPage> createState() => _DishDetailPageState();
+}
+
+class _DishDetailPageState extends State<DishDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Load meal details when the page is first displayed
+    context.read<DishesBloc>().add(LoadMealDetails(widget.mealId));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Use the existing BlocProvider from the widget tree
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(dish.name),
-        centerTitle: true,
+        title: const Text('Meal Details'),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.r),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: Image.network(
-                dish.imageUrl,
-                width: double.infinity,
-                height: 200.h,
-                fit: BoxFit.cover,
-                loadingBuilder: (BuildContext context, Widget child,
-                    ImageChunkEvent? loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: double.infinity,
-                    height: 200.h,
-                    color: Colors.grey[200],
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (BuildContext context, Object error,
-                        StackTrace? stackTrace) =>
-                    Container(
-                  width: double.infinity,
-                  height: 200.h,
-                  color: Colors.grey[300],
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Icon(Icons.fastfood, size: 50, color: Colors.grey),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Failed to load image',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
+      body: BlocBuilder<DishesBloc, DishesState>(
+        builder: (context, state) {
+            if (state is MealDetailsLoaded) {
+              final MealModel meal = state.meal.meals.first;
+              return _buildMealDetails(context, meal);
+            } else if (state is DishesError) {
+              return error_widget.ErrorWidget(
+                message: state.message,
+                onRetry: () => context.read<DishesBloc>().add(LoadMealDetails(widget.mealId)),
+              );
+            } else if (state is NoInternetState) {
+              return error_widget.ErrorWidget(
+                message: 'No internet connection',
+                onRetry: () => context.read<DishesBloc>().add(LoadMealDetails(widget.mealId)),
+              );
+            } else if (state is DishesEmpty) {
+              return error_widget.ErrorWidget(
+                message: 'Meal not found',
+                onRetry: () => context.read<DishesBloc>().add(LoadMealDetails(widget.mealId)),
+              );
+            }
+            return  Center(child: LoadingWidget());
+          },
+        ),
+      );
+  }
+
+  Widget _buildMealDetails(BuildContext context, MealModel meal) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Meal Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.0),
+            child: CachedNetworkImage(
+              imageUrl: meal.strMealThumb ?? '',
+              width: double.infinity,
+              height: 250.h,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => const Center(
+                child: CircularProgressIndicator(),
               ),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             ),
-            SizedBox(height: 16.h),
-            Text(
-              dish.name,
-              style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          SizedBox(height: 16.h),
+          
+          // Meal Name
+          Text(
+            meal.strMeal ?? 'No name',
+            style: TextStyle(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.bold,
             ),
-            SizedBox(height: 8.h),
-            Row(
-              children: <Widget>[
-                const Icon(Icons.timer, size: 16),
-                SizedBox(width: 4.w),
-                Text('${dish.preparationTime} min'),
-                SizedBox(width: 16.w),
-                const Icon(Icons.star, size: 16, color: Colors.amber),
-                SizedBox(width: 4.w),
-                Text(dish.rating.toString()),
-              ],
+          ),
+          SizedBox(height: 8.h),
+          
+          // Category & Area
+          Row(
+            children: [
+              _buildInfoChip(meal.strCategory ?? 'Unknown'),
+              SizedBox(width: 8.w),
+              _buildInfoChip(meal.strArea ?? 'Unknown'),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          
+          // Ingredients
+          Text(
+            'Ingredients',
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
             ),
-            SizedBox(height: 16.h),
-            Text(
-              '\$${dish.price.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).primaryColor,
+          ),
+          SizedBox(height: 8.h),
+          _buildIngredientsList(meal.ingredientsWithMeasures),
+          SizedBox(height: 16.h),
+          
+          // Instructions
+          Text(
+            'Instructions',
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            meal.strInstructions ?? 'No instructions available',
+            style: TextStyle(fontSize: 16.sp),
+          ),
+          SizedBox(height: 16.h),
+          
+          // Tags
+          if (meal.strTags?.isNotEmpty ?? false)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tags',
+                  style: TextStyle(
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                SizedBox(height: 8.h),
+                Wrap(
+                  spacing: 8.0,
+                  children: meal.strTags!
+                      .split(',')
+                      .map((tag) => _buildInfoChip(tag.trim()))
+                      .toList(),
+                ),
+              ],
             ),
-            SizedBox(height: 16.h),
-            Text(
-              'Description',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(height: 8.h),
-            Text(dish.description),
-            SizedBox(height: 16.h),
-            Text(
-              'Ingredients',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(height: 8.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: dish.ingredients
-                  .map((String ingredient) => Chip(
-                        label: Text(ingredient),
-                        backgroundColor:
-                            Theme.of(context).colorScheme.surfaceContainerHighest,
-                      ))
-                  .toList(),
-            ),
-          ],
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildInfoChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade100,
+        borderRadius: BorderRadius.circular(16.0),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: Colors.blue), 
+      ),
+    );
+  }
+
+  Widget _buildIngredientsList(Map<String, String> ingredients) {
+    return Column(
+      children: ingredients.entries
+          .map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.circle, size: 8.0),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        '${entry.key}${entry.value.isNotEmpty ? ' - ${entry.value}' : ''}',
+                        style: TextStyle(fontSize: 16.sp),
+                      ),
+                    ),
+                  ],
+                ),
+              ))
+          .toList(),
     );
   }
 }
