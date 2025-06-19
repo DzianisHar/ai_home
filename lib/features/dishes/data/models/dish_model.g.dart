@@ -1,0 +1,34 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// ignore_for_file: duplicate_ignore, unused_element, unused_field, invalid_annotation_target, sort_child_properties_last, always_put_required_named_parameters_first, constant_identifier_names, non_constant_identifier_names, prefer_single_quotes, lines_longer_than_80_chars, prefer_const_constructors, prefer_const_literals_to_create_immutables, unnecessary_this, prefer_const_declarations, avoid_unused_constructor_parameters, prefer_final_fields, prefer_const_constructors_in_immutables, unnecessary_new, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, depend_on_referenced_packages, prefer_typing_uninitialized_variables, prefer_void_to_null, always_put_control_body_on_new_line, avoid_relative_lib_imports, avoid_private_typedef_functions, avoid_renaming_method_parameters, avoid_returning_this, avoid_void_async, camel_case_extensions, cancel_subscriptions, cascade_invocations, comment_references, control_flow_in_finally, curly_braces_in_flow_control_structures, empty_catches, empty_constructor_bodies, file_names, flutter_style_todos, hash_and_equals, implementation_imports, iterable_contains_unrelated_type, join_return_with_assignment, leading_newlines_in_multiline_strings, library_names, library_prefixes, list_remove_unrelated_type, literal_only_boolean_expressions, missing_whitespace_between_adjacent_strings, no_adjacent_strings_in_list, no_duplicate_case_values, no_logic_in_create_state, no_runtimeType_toString, null_check_on_nullable_type_parameter, omit_local_variable_types, one_member_abstracts, only_throw_errors, overridden_fields, package_api_docs, package_names, package_prefixed_library_names, parameter_assignments, prefer_adjacent_string_concatenation, prefer_asserts_in_initializer_lists, prefer_asserts_with_message, prefer_collection_literals, prefer_conditional_assignment, prefer_constructors_over_static_methods, prefer_contains, prefer_double_quotes, prefer_equal_for_default_values, prefer_expression_function_bodies, prefer_final_in_for_each, prefer_final_locals, prefer_final_parameters, prefer_foreach, prefer_function_declarations_over_variables, prefer_generic_function_type_aliases, prefer_if_elements_to_conditional_operators, prefer_if_null_operators, prefer_initializing_formals, prefer_inlined_adds, prefer_int_literals, prefer_interpolation_to_compose_strings, prefer_is_empty, prefer_is_not_empty, prefer_is_not_operator, prefer_iterable_whereType, prefer_mixin, prefer_null_aware_operators, prefer_relative_imports, prefer_spread_collections, provide_deprecation_message, recursive_getters, require_trailing_commas, sized_box_for_whitespace, sort_pub_dependencies, sort_unnamed_constructors_first, test_types_in_equals, throw_in_finally, tighten_type_of_initializing_formals, type_annotate_public_apis, type_init_formals, unawaited_futures, unnecessary_await_in_return, unnecessary_brace_in_string_interps, unnecessary_const, unnecessary_constructor_name, unnecessary_final, unnecessary_getters_setters, unnecessary_lambdas, unnecessary_late, unnecessary_null_aware_assignments, unnecessary_null_checks, unnecessary_nullable_for_final_variable_declarations, unnecessary_overrides, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_statements, unnecessary_string_escapes, unnecessary_string_interpolations, unnecessary_to_list_in_spreads, unnecessary_type_check, unnecessary_type_check_in_asserts, unnecessary_type_check_in_equality_operator, unnecessary_type_check_in_if_null_operator, unnecessary_type_check_in_logical_operator, unnecessary_type_check_in_null_aware_operator, unnecessary_type_check_in_ternary_operator, unnecessary_type_check_in_while_loop, unnecessary_type_check_in_while_loop_condition, unnecessary_type_check_in_while_loop_initializer, unnecessary_type_check_in_while_loop_update, use_build_context_synchronously, use_full_hex_values_for_flutter_colors, use_function_type_syntax_for_parameters, use_key_in_widget_constructors, use_late_for_private_fields_and_variables, use_named_constants, use_named_parameters, use_rethrow_when_possible, use_setters_to_change_properties, use_string_buffers, use_super_parameters, valid_regexps, void_checks
+
+part of 'dish_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+DishModel _$DishModelFromJson(Map<String, dynamic> json) => DishModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String,
+      price: (json['price'] as num).toDouble(),
+      imageUrl: json['imageUrl'] as String,
+      ingredients: (json['ingredients'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      preparationTime: (json['preparationTime'] as num?)?.toInt() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+    );
+
+Map<String, dynamic> _$DishModelToJson(DishModel instance) => <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'description': instance.description,
+      'price': instance.price,
+      'imageUrl': instance.imageUrl,
+      'ingredients': instance.ingredients,
+      'preparationTime': instance.preparationTime,
+      'rating': instance.rating,
+    };
